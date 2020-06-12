@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="shortcut icon" href="#"/>
+    <script src="{{ url_for('static',filename='js/three.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/Loaders/OBJLoader.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/loaders/MTLLoader.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/controls/OrbitControls.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/stats.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/dat.gui.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/draw.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/showModel.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/displayUpload.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/start_and_upload.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/bootstrap.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap.css') }}">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="{{ url_for('static',filename='js/bootstrap-select.js') }}"></script>
+    <!-- (Optional) Latest compiled and minified JavaScript translation files -->
+    <script src="{{ url_for('static',filename='js/defaults-zh_CN.js') }}"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.css') }}">
+
+    <title>3D Retrieval System</title>
+    <style type="text/css">
+
+        canvas {
+            display: block;
+        }
+
+        .navbar-default .navbar-brand {
+            color: #337ab7;
+        }
+
+        .navbar-default .navbar-nav > li > a {
+            color: #337ab7;
+        }
+
+        #ShowModal {
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 80%;
+            /*这个比例可以自己按需调节*/
+            overflow: visible;
+            bottom: inherit;
+            right: inherit;
+        }
+
+        .mydiv {
+            border: #909090 1px solid;
+            background: #fff;
+            color: #333;
+            filter: progid:DXImageTransform.Microsoft.Shadow(color=#909090, direction=120, strength=4);
+            -moz-box-shadow: 2px 2px 10px #909090;
+            -webkit-box-shadow: 2px 2px 10px #909090;
+            box-shadow: 2px 2px 10px #909090;
+            height: 235px;
+            width: 353px;
+            border-radius: 2px;
+            position: absolute;
+        }
+
+        .showdiv {
+            margin-left: 0.5px;
+            margin-top: 0.5px;
+        }
+
+        .detail {
+            margin-right: 2px;
+            margin-top: 1px;
+            float: right;
+        }
+
+    </style>
+</head>
+<body>
+<!-- 登录模态框（Modal） -->
+<div class="modal fade" id="LoginModal" tabindex="-1" role="dialog" aria-labelledby="LoginModalLabelContext"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h4 class="modal-title" id="LoginModalLabel">后台登录验证</h4>
+            </div>
+            <div class="modal-body" id="LoginModalLabelContext" style="height:150px; display: flex;
+					                                                justify-content: center;align-items: center;">
+
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" maxlength="10" id="username" placeholder="请输入账户名…"
+                           required="required"/>
+                    <input type="password" class="form-control" maxlength="10" id="password" placeholder="请输入密码…"
+                           required="required"
+                           style="margin-top:20px"/>
+                    <span id="result"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="submit" class="btn btn-primary" onclick="login()">Sign in</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<!-- 模型显示模态框（Modal） -->
+<div class="modal fade" id="ShowModal" tabindex="-1" role="dialog" aria-labelledby="ShowModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h4 class="modal-title" id="ShowModalLabel">显示模型：</h4>
+            </div>
+            <div class="modal-body" id="ShowModalLabelContext" style="height:550px;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="download_from_Modal()">下载该模型</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<!-----------------------------------------导航条设计开始--------------------------------->
+<!--黑色导航条样式为navbar-inverse,白色样式为navbar-default,navbar-fixed-top导航条固定在顶端-->
+<nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#">3D_Retrival_System</a>
+            <!---放log的地方-->
+        </div>
+
+        <!-- 当浏览器小于某个值时，点击button图标显示导航条的内容（注意这里的id与button 的id对应）-->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <!--具体菜单项-->
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="#">浏览模型库<span class="sr-only">(current)</span></a></li>
+                <li><a href="http://127.0.0.1:5000/retrieval">模型检索</a></li>
+                <li><a href="http://127.0.0.1:5000/convert">模型格式转换</a></li>
+            </ul>
+            <!--导航栏右部，登录 注册-->
+            <ul class="nav navbar-nav navbar-right">
+                <!-- 按钮触发模态框 -->
+                <li>
+                    <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#LoginModal"
+                            style="margin:3px;">后台管理
+                    </button>
+                </li>
+            </ul>
+        </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+</nav>
+<!------------------------------------------导航条结束-------------------------------->
+
+<div id="left" style="position: absolute;top: 60px; ">
+
+    <h3 class="text-success" style="margin-top: 35px;margin-left: 10px;">选择您要查看的模型类别：</h3>
+    <div id="select_display_class" style="margin-top: 20px;font-size: 17px;">
+        <ul class="breadcrumb breadcrumb-lg">
+            <li onclick="displayall('airplane')"><a href="#">airplane</a></li>
+            <li onclick="displayall('bathtub')"><a href="#">bathtub</a></li>
+            <li onclick="displayall('bed')"><a href="#">bed</a></li>
+            <li onclick="displayall('bench')"><a href="#">bench</a></li>
+            <li onclick="displayall('bottle')"><a href="#">bottle</a></li>
+        </ul>
+        <ul class="breadcrumb">
+            <li onclick="displayall('bookshelf')"><a href="#">bookshelf</a></li>
+            <li onclick="displayall('bowl')"><a href="#">bowl</a></li>
+            <li onclick="displayall('car')"><a href="#">car</a></li>
+            <li onclick="displayall('chair')"><a href="#">chair</a></li>
+            <li onclick="displayall('cone')"><a href="#">cone</a></li>
+        </ul>
+        <ul class="breadcrumb">
+            <li onclick="displayall('cup')"><a href="#">cup</a></li>
+            <li onclick="displayall('curtain')"><a href="#">curtain</a></li>
+            <li onclick="displayall('desk')"><a href="#">desk</a></li>
+            <li onclick="displayall('door')"><a href="#">door</a></li>
+            <li onclick="displayall('dresser')"><a href="#">dresser</a></li>
+        </ul>
+        <ul class="breadcrumb">
+            <li onclick="displayall('flower_pot')"><a href="#">flower_pot</a></li>
+            <li onclick="displayall('glass_box')"><a href="#">glass_box</a></li>
+            <li onclick="displayall('guitar')"><a href="#">guitar</a></li>
+            <li onclick="displayall('keyboard')"><a href="#">keyboard</a></li>
+            <li onclick="displayall('lamp')"><a href="#">lamp</a></li>
+        </ul>
+        <ul class="breadcrumb">
+            <li onclick="displayall('laptop')"><a href="#">laptop</a></li>
+            <li onclick="displayall('mantel')"><a href="#">mantel</a></li>
+            <li onclick="displayall('monitor')"><a href="#">monitor</a></li>
+            <li onclick="displayall('night_stand')"><a href="#">night_stand</a></li>
+            <li onclick="displayall('person')"><a href="#">person</a></li>
+        </ul>
+        <ul class="breadcrumb">
+            <li onclick="displayall('piano')"><a href="#">piano</a></li>
+            <li onclick="displayall('plant')"><a href="#">plant</a></li>
+            <li onclick="displayall('radio')"><a href="#">radio</a></li>
+            <li onclick="displayall('range_hood')"><a href="#">range_hood</a></li>
+            <li onclick="displayall('sink')"><a href="#">sink</a></li>
+        </ul>
+        <ul class="breadcrumb">
+            <li onclick="displayall('sofa')"><a href="#">sofa</a></li>
+            <li onclick="displayall('stairs')"><a href="#">stairs</a></li>
+            <li onclick="displayall('stool')"><a href="#">stool</a></li>
+            <li onclick="displayall('table')"><a href="#">table</a></li>
+            <li onclick="displayall('tent')"><a href="#">tent</a></li>
+        </ul>
+        <ul class="breadcrumb">
+            <li onclick="displayall('toilet')"><a href="#">toilet</a></li>
+            <li onclick="displayall('tv_stand')"><a href="#">tv_stand</a></li>
+            <li onclick="displayall('vase')"><a href="#">vase</a></li>
+            <li onclick="displayall('wardrobe')"><a href="#">wardrobe</a></li>
+            <li onclick="displayall('xbox')"><a href="#">xbox</a></li>
+        </ul>
+    </div>
+    <div id="pages" style="text-align:center;display: none;float: left;">
+        <ul class="pagination pagination-lg">
+            <li id="Previous" class="page-item"><a id="Previous_a" class="page-link"
+                                                   onclick="draw(show_list,page_now-1)">&laquo;</a></li>
+            <li id="Page1" class="page-item active"><a class="page-link" onclick="draw(show_list,1)">1</a></li>
+            <li id="Page2" class="page-item"><a class="page-link" onclick="draw(show_list,2)">2</a></li>
+            <li id="Page3" class="page-item"><a class="page-link" onclick="draw(show_list,3)">3</a></li>
+            <li id="Page4" class="page-item"><a class="page-link" onclick="draw(show_list,4)">4</a></li>
+            <li id="Page5" class="page-item"><a class="page-link" onclick="draw(show_list,5)">5</a></li>
+            <li id="Next" class="page-item"><a id="Next_a" class="page-link" onclick="draw(show_list,page_now+1)">&raquo;</a>
+            </li>
+        </ul>
+        <div class="input-group" style="width: 110px;float: right;margin-top: 21px;margin-left: 10px;">
+            <input type="text" onkeyup="(this.v=function(){this.value=this.value.replace(/[^0-9-]+/,'');}).call(this)"
+                   onblur="this.v();"
+                   id="page_now_input" class="form-control" style="height: 45px" value="1" title="该类最大页数"/>
+            <span class="input-group-btn"><button class="btn btn-default" type="button"
+                                                  style="height: 45px;color: #337ab7;"
+                                                  onclick="draw(show_list,$('#page_now_input').val())">Go!</button></span>
+        </div>
+    </div>
+</div>
+
+
+<div id="right">
+
+    <div class="mydiv" id="1-1" style="left: 28%;top: 60px;">
+        <div class="showdiv" id="pos0"></div>
+        <div class="detail">
+            <button type="button" class="btn btn-default btn-sm" onclick="download(show_list[n * (page_now - 1) + 0])">
+                <span class="glyphicon glyphicon-floppy-save"></span> 下载到本地
+            </button>
+            <button type="button" class="btn btn-default btn-sm"
+                    onclick="MyshowModel(show_list[n * (page_now - 1) + 0])">
+                <span class="glyphicon glyphicon-fullscreen"></span> 详情查看
+            </button>
+        </div>
+    </div>
+
+    <div class="mydiv" id="1-2" style="left: 52%;top: 60px;">
+        <div class="showdiv" id="pos1"></div>
+        <div class="detail">
+            <button type="button" class="btn btn-default btn-sm" onclick="download(show_list[n * (page_now - 1) + 1])">
+                <span class="glyphicon glyphicon-floppy-save"></span> 下载到本地
+            </button>
+            <button type="button" class="btn btn-default btn-sm"
+                    onclick="MyshowModel(show_list[n * (page_now - 1) + 1])">
+                <span class="glyphicon glyphicon-fullscreen"></span> 详情查看
+            </button>
+        </div>
+    </div>
+    <div class="mydiv" id="1-3" style="left: 76%;top: 60px">
+        <div class="showdiv" id="pos2"></div>
+        <div class="detail">
+            <button type="button" class="btn btn-default btn-sm" onclick="download(show_list[n * (page_now - 1) + 2])">
+                <span class="glyphicon glyphicon-floppy-save"></span> 下载到本地
+            </button>
+            <button type="button" class="btn btn-default btn-sm"
+                    onclick="MyshowModel(show_list[n * (page_now - 1) + 2])">
+                <span class="glyphicon glyphicon-fullscreen"></span> 详情查看
+            </button>
+        </div>
+    </div>
+
+
+    <div class="mydiv" id="2-1" style="left: 28%;top: 300px;">
+        <div class="showdiv" id="pos3"></div>
+        <div class="detail">
+            <button type="button" class="btn btn-default btn-sm" onclick="download(show_list[n * (page_now - 1) + 3])">
+                <span class="glyphicon glyphicon-floppy-save"></span> 下载到本地
+            </button>
+            <button type="button" class="btn btn-default btn-sm"
+                    onclick="MyshowModel(show_list[n * (page_now - 1) + 3])">
+                <span class="glyphicon glyphicon-fullscreen"></span> 详情查看
+            </button>
+        </div>
+    </div>
+
+    <div class="mydiv" id="2-2" style="left: 52%;top: 300px;">
+        <div class="showdiv" id="pos4"></div>
+        <div class="detail">
+            <button type="button" class="btn btn-default btn-sm" onclick="download(show_list[n * (page_now - 1) + 4])">
+                <span class="glyphicon glyphicon-floppy-save"></span> 下载到本地
+            </button>
+            <button type="button" class="btn btn-default btn-sm"
+                    onclick="MyshowModel(show_list[n * (page_now - 1) + 4])">
+                <span class="glyphicon glyphicon-fullscreen"></span> 详情查看
+            </button>
+        </div>
+    </div>
+    <div class="mydiv" id="2-3" style="left: 76%;top: 300px">
+        <div class="showdiv" id="pos5"></div>
+        <div class="detail">
+            <button type="button" class="btn btn-default btn-sm" onclick="download(show_list[n * (page_now - 1) + 5])">
+                <span class="glyphicon glyphicon-floppy-save"></span> 下载到本地
+            </button>
+            <button type="button" class="btn btn-default btn-sm"
+                    onclick="MyshowModel(show_list[n * (page_now - 1) + 5])">
+                <span class="glyphicon glyphicon-fullscreen"></span> 详情查看
+            </button>
+        </div>
+    </div>
+
+    <div class="mydiv" id="3-1" style="left: 28%;top: 540px;">
+        <div class="showdiv" id="pos6"></div>
+        <div class="detail">
+            <button type="button" class="btn btn-default btn-sm" onclick="download(show_list[n * (page_now - 1) + 6])">
+                <span class="glyphicon glyphicon-floppy-save"></span> 下载到本地
+            </button>
+            <button type="button" class="btn btn-default btn-sm"
+                    onclick="MyshowModel(show_list[n * (page_now - 1) + 6])">
+                <span class="glyphicon glyphicon-fullscreen"></span> 详情查看
+            </button>
+        </div>
+    </div>
+
+    <div class="mydiv" id="3-2" style="left: 52%;top: 540px;">
+        <div class="showdiv" id="pos7"></div>
+        <div class="detail">
+            <button type="button" class="btn btn-default btn-sm" onclick="download(show_list[n * (page_now - 1) + 7])">
+                <span class="glyphicon glyphicon-floppy-save"></span> 下载到本地
+            </button>
+            <button type="button" class="btn btn-default btn-sm"
+                    onclick="MyshowModel(show_list[n * (page_now - 1) + 7])">
+                <span class="glyphicon glyphicon-fullscreen"></span> 详情查看
+            </button>
+        </div>
+    </div>
+    <div class="mydiv" id="3-3" style="left: 76%;top: 540px">
+        <div class="showdiv" id="pos8"></div>
+        <div class="detail">
+            <button type="button" class="btn btn-default btn-sm" onclick="download(show_list[n * (page_now - 1) + 8])">
+                <span class="glyphicon glyphicon-floppy-save"></span> 下载到本地
+            </button>
+            <button type="button" class="btn btn-default btn-sm"
+                    onclick="MyshowModel(show_list[n * (page_now - 1) + 8])">
+                <span class="glyphicon glyphicon-fullscreen"></span> 详情查看
+            </button>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    $(".detail").css('display', 'none');
+    var displayflag = false;
+    var userflag = false;
+    var drawed_flag = false;
+    const n = 9; //显示的模型数
+    var page_now = 1; //显示第p页
+    var all_pages = 0; //总共会显示的页数
+    var num_last_p = 0; //最后一页显示的模型数
+    var need_remove = 0; //	需要remove的模型数目，在remove时候使用
+    var show_list = [];
+    var renderer = new Array(n);
+    var scene = new Array(n);
+    var light = new Array(n);
+    var camera = new Array(n);
+    var controls = new Array(n);
+    //初始化dat.GUI简化试验流程
+    var gui;
+    //初始化性能插件
+    var stats;
+</script>
+</html>

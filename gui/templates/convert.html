@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="shortcut icon" href="#"/>
+    <script src="{{ url_for('static',filename='js/convert.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/jquery.form.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/bootstrap.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap.css') }}">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="{{ url_for('static',filename='js/bootstrap-select.js') }}"></script>
+    <!-- (Optional) Latest compiled and minified JavaScript translation files -->
+    <script src="{{ url_for('static',filename='js/defaults-zh_CN.js') }}"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.css') }}">
+
+    <title>3D Retrieval System</title>
+    <style type="text/css">
+
+        .navbar-default .navbar-brand {
+            color: #337ab7;
+        }
+
+        .navbar-default .navbar-nav > li > a {
+            color: #337ab7;
+        }
+
+        #ShowModal {
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 80%;
+            /*这个比例可以自己按需调节*/
+            overflow: visible;
+            bottom: inherit;
+            right: inherit;
+        }
+
+    </style>
+</head>
+<body>
+<!-- 登录模态框（Modal） -->
+<div class="modal fade" id="LoginModal" tabindex="-1" role="dialog" aria-labelledby="LoginModalLabelContext"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h4 class="modal-title" id="LoginModalLabel">请输入密码</h4>
+            </div>
+            <div class="modal-body" id="LoginModalLabelContext" style="height:150px; display: flex;
+					                                                justify-content: center;align-items: center;">
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" maxlength="10" id="username" placeholder="请输入账户名…"/>
+                    <input type="password" class="form-control" maxlength="10" id="password" placeholder="请输入密码…"
+                           style="margin-top:20px"/>
+                    <span id="result"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="login()">Sign in</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<!-- 模型显示模态框（Modal） -->
+<div class="modal fade" id="ShowModal" tabindex="-1" role="dialog" aria-labelledby="ShowModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h4 class="modal-title" id="ShowModalLabel">显示模型：</h4>
+            </div>
+            <div class="modal-body" id="ShowModalLabelContext" style="height:550px;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="download_from_Modal()">下载该模型</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<!-----------------------------------------导航条设计开始--------------------------------->
+<!--黑色导航条样式为navbar-inverse,白色样式为navbar-default,navbar-fixed-top导航条固定在顶端-->
+<nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#">3D_Retrival_System</a>
+            <!---放log的地方-->
+        </div>
+
+        <!-- 当浏览器小于某个值时，点击button图标显示导航条的内容（注意这里的id与button 的id对应）-->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <!--具体菜单项-->
+            <ul class="nav navbar-nav">
+                <li><a href="http://127.0.0.1:5000/">浏览模型库</a></li>
+                <li><a href="http://127.0.0.1:5000/retrieval">模型检索</a></li>
+                <li class="active"><a href="#">模型格式转换<span class="sr-only">(current)</span></a></li>
+            </ul>
+            <!--导航栏右部，登录 注册-->
+            <ul class="nav navbar-nav navbar-right">
+                <!-- 按钮触发模态框 -->
+                <li>
+                    <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#LoginModal"
+                            style="margin:3px;">后台管理
+                    </button>
+                </li>
+            </ul>
+        </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+</nav>
+<!------------------------------------------导航条结束-------------------------------->
+
+
+<div class="panel panel-default" style="margin: 80px auto 0;width: 80%">
+    <div class="panel-heading">
+        <h3 class="panel-title">模型格式转换</h3>
+    </div>
+
+    <h3 class="text-success" style="margin-top: 35px;margin-left: 10px;">上传模型后选择目标格式开始转换</h3>
+    <h4 style="margin-top: 35px;margin-left: 10px;">支持.ply、.off、.obj、.3ds、.fbx、.x3d、.stl格式</h4>
+
+    <div class="panel-body">
+        <ul class="list-group">
+            <li class="list-group-item">
+                <form id="convert_Form" method="post" enctype="multipart/form-data" style="display: none">
+                    <input type="file" id="up_file_btn_convert" name="convert_file"
+                           onchange="check_before_upload_convert()">
+                </form>
+                <div style="text-align:center;margin-top:50px;">
+                    <div class="form-group" style="margin-left: 20%;margin-right: 20%;">
+                        <div class="input-group">
+                            <input id="location" class="form-control" readonly="readonly">
+                            <label class="input-group-btn">
+                                <input type="button" id="i-check" value="上传模型" class="btn btn-primary"
+                                       onclick="$('#up_file_btn_convert').trigger('click')">
+                            </label>
+                        </div>
+                    </div>
+                    <div style=" margin-top: 60px;">
+                        <select id="target_format" class="selectpicker" data-width="45%" data-live-search="true"
+                                title="选择要转换的目标格式">
+                            <option>off</option>
+                            <option>obj</option>
+                            <option>stl</option>
+                            <option>3ds</option>
+                            <option>fbx</option>
+                            <option>x3d</option>
+                            <option>ply</option>
+                        </select>
+
+                    </div>
+                    <div style="margin-top: 40px;">
+                        <a onclick="check_and_upload_convert()" class="btn btn-success btn-lg">
+                                <span id="startbtn" class="glyphicon glyphicon-play"
+                                      style="width: 150px;">&nbsp;开始转换</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+
+</body>
+<script>
+    var target_format = '';
+    $('.selectpicker').selectpicker({
+        'deselectAllText': '全不选',
+        'selectAllText': '全选',
+        'countSelectedText': '选中{1}类别中的{0}类，默认全选',
+    });
+    $('#location').val("");
+
+</script>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- Required meta tags -->
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<link rel="shortcut icon" href="#" />
+		<script src="{{ url_for('static',filename='js/admin.js') }}"></script>
+		<script src="{{ url_for('static',filename='js/jquery.min.js') }}"></script>
+		<script src="{{ url_for('static',filename='js/bootstrap.min.js') }}"></script>
+		<link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap.css') }}">
+		<title>3D Retrieval System Admin</title>
+		<style type="text/css">
+			.navbar-default .navbar-brand {
+				color: #337ab7;
+			}
+
+			.navbar-default .navbar-nav>li>a {
+				color: #337ab7;
+			}
+		</style>
+	</head>
+	<body>
+		<!-----------------------------------------导航条设计开始--------------------------------->
+		<!--黑色导航条样式为navbar-inverse,白色样式为navbar-default,navbar-fixed-top导航条固定在顶端-->
+		<nav class="navbar navbar-default navbar-fixed-top">
+			<div class="container-fluid">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<a class="navbar-brand" href="#">3D_Retrival_System_Admin</a>
+					<!---放log的地方-->
+				</div>
+				<!-- 当浏览器小于某个值时，点击button图标显示导航条的内容（注意这里的id与button 的id对应）-->
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<!--具体菜单项-->
+					<ul class="nav navbar-nav">
+						<li><a href="http://127.0.0.1:5000/admin">浏览模型库</a></li>
+						<li class="active"><a href="#">模型训练<span class="sr-only">(current)</span></a></li>
+					</ul>
+					<!--导航栏右部，登录 注册-->
+					<ul class="nav navbar-nav navbar-right">
+						<!-- 按钮触发模态框 -->
+						<li><button class="btn btn-primary btn-lg" style="margin:3px;" onclick="login_out()">登出</button></li>
+					</ul>
+				</div><!-- /.navbar-collapse -->
+			</div><!-- /.container-fluid -->
+		</nav>
+		<!------------------------------------------导航条结束-------------------------------->
+		<div class="panel panel-default" style="margin: 60px auto 0;width: 90%">
+
+			<div class="panel-heading">
+				<h3 class="panel-title">使用方法：</h3>
+			</div>
+
+			<div class="panel-body">
+				<ul class="list-group">
+					<li class="list-group-item">
+						<h4>一、数据集准备</h4>
+                            <h5>将off文件或obj文件按照比例放在训练集、测试集文件夹里，以ModelNet40数据集为例，路径参照下图</h5>
+                        <img src="static/img/数据集结构.png" height="50%" width="50%" alt="数据集结构示意图"  title='数据集结构示意图'>
+					</li>
+					<li class="list-group-item">
+						<h4>二、数据集生成</h4>
+                        <h5>2.1 运行<code>gen_all_obj_and_views.py</code>文件，生成三维模型的视图和obj文件（obj文件可选）</h5>
+                        <h5>2.2 将视图文件和与其对应的两级索引文件放在正确路径里，如图</h5>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;一级索引示例，每行两列，第一列为二级索引路径，第二列为类别编号：<br/>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="static/img/一级索引示例.png" style="height:20%;width:20%;border: 1px solid;" alt="一级索引示例" title='一级索引示例'>
+                        <br/><br/>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;二级索引示例，第一行为类别编号，第二行为视图数目，其余为视图路径：<br/>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="static/img/二级索引示例.png" style="height:25%;width:25%;border: 1px solid;" alt="二级索引示例" title='二级索引示例'>
+					</li>
+					<li class="list-group-item">
+						<h4>三、可以运行<code>replace_files.py</code>和<code>rename_files.py</code>文件来修改txt文件内容以获得想要的格式</h4>
+					</li>
+					<li class="list-group-item">
+						<h4>四、开始训练</h4>
+						<ul class="list-group">
+                        <li class="list-group-item"><h5>多GPU服务器下：填入类别数，确认无误后点击开始训练，训练会在验证集达到90%以上精度后自动停止。</h5>
+
+                            <input type="number" id="class_num_input" min="2" placeholder="  请输入类别数..."/>
+						<div style="margin-left: 20px; display:inline" >
+							<a onclick="start_train()" class="btn btn-success btn">
+								<span id="start_train_btn" class="glyphicon glyphicon-play" style="width: 100px;">&nbsp;开始训练</span>
+							</a>
+						</div>
+
+                        </li><li class="list-group-item">
+						<h5>单GPU服务器下：（推荐使用）<br/><br/>
+							从alexnet迁移学习：<br/>
+                            <pre>python train.py --train_dir=model --caffemodel=alexnet_imagenet.npy --learning_rate=0.0001</pre>
+							fine-tune：<br/>
+                            <pre>python train.py --train_dir=model --weights=tmp/model.ckpt-yourstep --learning_rate=0.0001</pre>
+						</h5></li>
+                        </ul>
+					</li>
+				</ul>
+
+
+			</div>
+		</div>
+
+	</body>
+</html>
