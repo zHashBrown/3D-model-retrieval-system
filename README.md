@@ -5,4 +5,4 @@
 
 项目示例：https://www.bilibili.com/video/BV13K411p7Su
 
-项目细节与改进方向：http://zxetb.cn/index.php/archives/10/
+项目细节与改进方向请参照同名文件夹
