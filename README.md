@@ -1,8 +1,20 @@
 # 3D-model-retrieval-system
 本人毕设，三维模型检索系统
 
-项目基于：https://github.com/WeiTang114/MVCNN-TensorFlow
+项目基于三维模型分类：https://github.com/WeiTang114/MVCNN-TensorFlow
 
 项目示例：https://www.bilibili.com/video/BV13K411p7Su
 
 项目细节与改进方向请参照同名文件夹
+
+···················································································································
+
+2021.8.9更新
+
+上传一个从数据集制作到检索的完整流程，以及数据集路径。（不含体积较小的三维模型）
+
+（仅检索部分移植：未亲测）
+若不使用GUI界面，或不使用modelnet40数据集，仅使用检索功能，请尝试将gui.py文件内 预加载模型 的过程，
+复制粘贴至demo.py文件内并修改代码做相应处理.
+
+检索功能主要调用main()以及retrival_data()函数。
